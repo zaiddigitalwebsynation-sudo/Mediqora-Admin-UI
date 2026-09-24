@@ -1,9 +1,11 @@
-import React from 'react'
+import LoginForm from "../components/auth/LoginForm";
 
 const Login = () => {
   return (
-    <div>Login</div>
-  )
-}
+    <div className="min-h-screen bg-primary flex items-center justify-center p-4">
+      <LoginForm />
+    </div>
+  );
+};
 
-export default Login
+export default Login;
