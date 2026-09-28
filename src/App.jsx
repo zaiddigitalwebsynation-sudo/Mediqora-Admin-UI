@@ -2,7 +2,7 @@ import AppRoutes from "./routes/AppRoutes"
 
 const App = () => {
   return (
-    <div className="min-h-screen w-screen">
+    <div className="min-h-screen">
       <AppRoutes />
     </div>
   )

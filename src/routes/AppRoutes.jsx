@@ -1,22 +1,30 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Home from "../pages/Home";
-import ViewClinic from "../pages/ViewClinic"
-import Login from "../pages/Login"
-import ForgotPassword from "../pages/ForgotPassword"
-import ResetPassword from "../pages/ResetPassword"
+import DashBoard from "../pages/Dashboard";
+import ViewClinic from "../pages/ViewClinic";
+import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
+import Layout from "../layout/Layout";
+import Clinic from "../pages/Clinic";
 
 const AppRoutes = () => {
   return (
-    <div>
-      <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/:id" element={<ViewClinic />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-        <Route path="/forgot-password" element={<ForgotPassword />}></Route>
-        <Route path="/reset-password/:token" element={<ResetPassword />}></Route>
-      </Routes>
-    </div>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route
+        path="/reset-password/:token"
+        element={<ResetPassword />}
+      />
+
+      {/* Protected/Layout Routes */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<DashBoard />} />
+        <Route path="/clinic" element={<Clinic />} />
+        <Route path="/clinic/:id" element={<ViewClinic />} />
+      </Route>
+    </Routes>
   );
 };
 

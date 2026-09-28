@@ -3,7 +3,7 @@ import ForgotPasswordForm from "../components/auth/ForgotPasswordForm";
 
 const ForgotPassword = () => {
   return (
-    <div className="min-h-screen w-full bg-primary flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         {/* Logo / Title */}
         <div className="text-center mb-8">

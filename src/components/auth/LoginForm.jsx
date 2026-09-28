@@ -12,7 +12,7 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 
-import Logo from "../../assets/logo.png";
+import Logo from "../../assets/fullLogo.png";
 import { useNavigate } from "react-router-dom"
 
 const LoginForm = () => {
@@ -49,17 +49,13 @@ const LoginForm = () => {
             <img
               src={Logo}
               alt="Clinic Logo"
-              className="w-36 h-auto object-contain brightness-0 invert"
+              className="w-45 h-auto object-contain"
             />
           </div>
 
           {/* Content */}
           <div className="max-w-md">
-            <div className="mb-6">
-              <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
-                <span className="text-2xl font-bold">+</span>
-              </div>
-            </div>
+           
 
             <h1 className="text-4xl font-bold leading-tight">
               Manage your clinic
