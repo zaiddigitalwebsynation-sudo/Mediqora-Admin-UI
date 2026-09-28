@@ -11,8 +11,10 @@ import {
   FiArrowDownRight,
   FiActivity,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const DashBoard = () => {
+  const navigate = useNavigate();
   // Dummy dashboard data
   const stats = [
     {
@@ -201,7 +203,7 @@ const DashBoard = () => {
             </p>
           </div>
 
-          <button className="text-sm font-medium text-primary hover:underline">
+          <button onClick={() => navigate("/clinic")} className="text-sm font-medium text-primary hover:underline">
             View All Clinics →
           </button>
         </div>

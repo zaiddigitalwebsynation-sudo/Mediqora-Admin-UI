@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Menu, UserCircle } from "lucide-react";
+import { Menu, UserCircle } from "lucide-react";
 
 const Nav = ({ onMenuClick }) => {
   return (
@@ -30,18 +30,7 @@ const Nav = ({ onMenuClick }) => {
 
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-4">
-          
-          {/* Notification */}
-          <button
-            type="button"
-            className="relative rounded-xl p-2.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Bell className="h-5 w-5" />
-
-            {/* Notification Dot */}
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-          </button>
-
+        
           {/* Divider */}
           <div className="hidden h-8 w-px bg-gray-200 sm:block" />
 
