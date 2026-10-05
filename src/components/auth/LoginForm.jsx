@@ -10,8 +10,10 @@ import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
 import Logo from "../../assets/fullLogo.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import useAuth from "../../hooks/useAuth";
 
 const LoginForm = () => {
+  const { user, setUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
@@ -33,6 +35,8 @@ const LoginForm = () => {
 
     try {
       const res = await ApiService.login(data);
+
+      setUser(res.data.data);
 
       toast.success("Login Successful!");
 
