@@ -1,4 +1,3 @@
-import React from "react";
 import { Menu, UserCircle } from "lucide-react";
 
 const Nav = ({ onMenuClick }) => {
