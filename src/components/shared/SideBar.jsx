@@ -10,6 +10,7 @@ import {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const menus = [
+    
     {
       name: "Dashboard",
       path: "/",

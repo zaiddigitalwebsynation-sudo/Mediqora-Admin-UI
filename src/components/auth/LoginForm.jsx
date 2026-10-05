@@ -3,20 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { loginSchema } from "../../validation/validation";
+import ApiService from "../../services/service";
 
-import {
-  FiMail,
-  FiLock,
-  FiEye,
-  FiEyeOff,
-  FiArrowRight,
-} from "react-icons/fi";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
 
 import Logo from "../../assets/fullLogo.png";
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
 
   const {
@@ -32,18 +29,27 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data) => {
-    console.log("Login Data:", data);
+    setServerError("");
 
-   
+    try {
+      const res = await ApiService.login(data);
+
+      toast.success("Login Successful!");
+
+      navigate("/");
+
+      setServerError("");
+    } catch (error) {
+      setServerError(
+        error?.response?.data?.message || "Login failed. Please try again." ,
+      );
+    }
   };
 
   return (
     <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
       <div className="grid md:grid-cols-2 min-h-[560px]">
-
-      
         <div className="hidden md:flex bg-primary text-white p-10 flex-col justify-between">
-          
           {/* Logo */}
           <div>
             <img
@@ -55,18 +61,14 @@ const LoginForm = () => {
 
           {/* Content */}
           <div className="max-w-md">
-           
-
             <h1 className="text-4xl font-bold leading-tight">
               Manage your clinic
-              <span className="block text-white/80">
-                smarter & faster.
-              </span>
+              <span className="block text-white/80">smarter & faster.</span>
             </h1>
 
             <p className="mt-5 text-white/70 leading-relaxed">
-              Manage patients, appointments, prescriptions and billing
-              from one simple platform designed for modern clinics.
+              Manage patients, appointments, prescriptions and billing from one
+              simple platform designed for modern clinics.
             </p>
 
             {/* Features */}
@@ -96,10 +98,8 @@ const LoginForm = () => {
           </p>
         </div>
 
-       
         <div className="flex items-center justify-center p-6 sm:p-10">
           <div className="w-full max-w-md">
-
             {/* Mobile Logo */}
             <div className="flex justify-center md:hidden mb-8">
               <img
@@ -111,21 +111,23 @@ const LoginForm = () => {
 
             {/* Heading */}
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">
-                Welcome back
-              </h2>
+              <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
 
               <p className="mt-2 text-sm text-gray-500">
                 Sign in to continue to your clinic dashboard.
               </p>
             </div>
 
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="space-y-5"
-            >
+            {serverError && (
+              <div className="mb-4 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-100">
+                  <span className="text-xs font-bold">!</span>
+                </div>
 
-             
+                <p className="font-medium">{serverError}</p>
+              </div>
+            )}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
                 <label
                   htmlFor="email"
@@ -160,7 +162,6 @@ const LoginForm = () => {
                 )}
               </div>
 
-          
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label
@@ -174,7 +175,7 @@ const LoginForm = () => {
                     type="button"
                     className="text-xs font-medium text-primary hover:underline"
                     onClick={() => {
-                      navigate("/forgot-password")
+                      navigate("/forgot-password");
                     }}
                   >
                     Forgot password?
@@ -188,10 +189,7 @@ const LoginForm = () => {
                       : "border-gray-300 focus-within:border-primary"
                   }`}
                 >
-                  <FiLock
-                    className="absolute left-3 text-gray-400"
-                    size={19}
-                  />
+                  <FiLock className="absolute left-3 text-gray-400" size={19} />
 
                   <input
                     id="password"
@@ -207,9 +205,7 @@ const LoginForm = () => {
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-3 text-gray-400 hover:text-gray-700 transition"
                     aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
+                      showPassword ? "Hide password" : "Show password"
                     }
                   >
                     {showPassword ? (
