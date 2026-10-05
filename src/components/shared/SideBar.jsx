@@ -1,7 +1,12 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
 import Logo from "../../assets/fullLogo.png";
-import { LayoutDashboard, Building2, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  X,
+  CreditCard,
+  WalletCards,
+} from "lucide-react";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const menus = [
@@ -15,11 +20,20 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: "/clinic",
       icon: Building2,
     },
+    {
+      name: "Subscription",
+      path: "/subscription",
+      icon: WalletCards,
+    },
+    {
+      name: "Payment",
+      path: "/payment",
+      icon: CreditCard,
+    },
   ];
 
   return (
     <>
-      
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
@@ -36,11 +50,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Header / Logo */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div className="flex items-center">
-            <img
-              src={Logo}
-              alt="Mediqora"
-              className="object-contain"
-            />
+            <img src={Logo} alt="Mediqora" className="object-contain" />
           </div>
 
           {/* Mobile Close Button */}
@@ -97,13 +107,9 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="m-3 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-white">
-                Mediqora
-              </p>
+              <p className="text-xs font-semibold text-white">Mediqora</p>
 
-              <p className="text-[11px] text-white/50">
-                Version 1.0.0
-              </p>
+              <p className="text-[11px] text-white/50">Version 1.0.0</p>
             </div>
 
             <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">

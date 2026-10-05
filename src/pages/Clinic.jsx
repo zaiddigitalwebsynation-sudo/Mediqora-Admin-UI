@@ -269,76 +269,7 @@ const Clinic = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col gap-3 border-t border-gray-200 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Result Count */}
-          <p className="text-xs text-gray-500">
-            Showing <span className="font-medium text-gray-700">1–5</span>{" "}
-            of <span className="font-medium text-gray-700">128</span> clinics
-          </p>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center gap-1.5">
-            {/* Previous */}
-            <button
-              type="button"
-              className="flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Previous
-            </button>
-
-            {/* Page 1 */}
-            <button
-              type="button"
-              className="h-8 w-8 rounded-lg bg-primary text-xs font-medium text-white"
-            >
-              1
-            </button>
-
-            {/* Page 2 */}
-            <button
-              type="button"
-              className="h-8 w-8 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100"
-            >
-              2
-            </button>
-
-            {/* Page 3 */}
-            <button
-              type="button"
-              className="h-8 w-8 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100"
-            >
-              3
-            </button>
-
-            <span className="px-1 text-xs text-gray-400">...</span>
-
-            {/* Page 13 */}
-            <button
-              type="button"
-              className="h-8 w-8 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100"
-            >
-              13
-            </button>
-
-            {/* Next */}
-            <button
-              type="button"
-              className="flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
-            >
-              Next
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-
-            {/* Limit */}
-            <select className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-primary">
-              <option>10 / page</option>
-              <option>20 / page</option>
-              <option>50 / page</option>
-            </select>
-          </div>
-        </div>
+      
       </div>
     </div>
   );
