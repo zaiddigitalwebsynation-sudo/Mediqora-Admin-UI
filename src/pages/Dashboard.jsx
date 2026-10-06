@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FiBriefcase,
   FiCheckCircle,
@@ -7,116 +7,116 @@ import {
   FiAlertTriangle,
   FiCreditCard,
   FiDollarSign,
-  FiArrowUpRight,
-  FiArrowDownRight,
   FiActivity,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import ApiService from "../services/service";
 
 const DashBoard = () => {
   const navigate = useNavigate();
-  // Dummy dashboard data
+  const [dashboardData, setDashboardData] = useState(null);
+  const [recentClinics, setRecentClinics] = useState([]);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [isLoadingClinics, setIsLoadingClinics] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadDashboard = async () => {
+      try {
+        const response = await ApiService.getDashboard();
+        if (isActive) setDashboardData(response.data?.data);
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load dashboard analytics.");
+        }
+      } finally {
+        if (isActive) setIsLoadingDashboard(false);
+      }
+    };
+
+    const loadRecentClinics = async () => {
+      try {
+        const response = await ApiService.getClinics({ page: 1, limit: 5 });
+        if (isActive) setRecentClinics(response.data?.data?.clinics || []);
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load clinics.");
+        }
+      } finally {
+        if (isActive) setIsLoadingClinics(false);
+      }
+    };
+
+    loadDashboard();
+    loadRecentClinics();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const formatCount = (value) => (value ?? 0).toLocaleString();
+  const formatCurrency = (value) =>
+    `₹${(value ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
   const stats = [
     {
       title: "Total Onboarded Clinics",
-      value: "248",
+      value: dashboardData ? formatCount(dashboardData.clinics?.totalOnboarded) : "—",
       description: "Total registered clinics",
       icon: <FiBriefcase />,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
-      trend: "+12.5%",
-      trendType: "up",
     },
     {
       title: "Active Clinics",
-      value: "214",
+      value: dashboardData ? formatCount(dashboardData.clinics?.active) : "—",
       description: "Currently active clinics",
       icon: <FiCheckCircle />,
       iconBg: "bg-green-50",
       iconColor: "text-green-600",
-      trend: "+8.2%",
-      trendType: "up",
     },
     {
       title: "Inactive Clinics",
-      value: "34",
+      value: dashboardData ? formatCount(dashboardData.clinics?.inactive) : "—",
       description: "Currently inactive clinics",
       icon: <FiXCircle />,
       iconBg: "bg-red-50",
       iconColor: "text-red-600",
-      trend: "-2.4%",
-      trendType: "down",
     },
     {
       title: "Subscription Pending",
-      value: "18",
+      value: dashboardData ? formatCount(dashboardData.subscriptions?.pending) : "—",
       description: "Clinics awaiting subscription",
       icon: <FiClock />,
       iconBg: "bg-orange-50",
       iconColor: "text-orange-600",
-      trend: "+4.1%",
-      trendType: "up",
     },
     {
       title: "Expiring Soon",
-      value: "12",
-      description: "Subscriptions expiring in 7 days",
+      value: dashboardData ? formatCount(dashboardData.subscriptions?.expiringSoon) : "—",
+      description: "Subscriptions expiring soon",
       icon: <FiAlertTriangle />,
       iconBg: "bg-yellow-50",
       iconColor: "text-yellow-600",
-      trend: "+1.8%",
-      trendType: "up",
     },
     {
       title: "Total Payment Done",
-      value: "₹12,48,500",
+      value: dashboardData ? formatCurrency(dashboardData.payments?.totalPayment) : "—",
       description: "Total collected payments",
       icon: <FiCreditCard />,
       iconBg: "bg-purple-50",
       iconColor: "text-purple-600",
-      trend: "+14.6%",
-      trendType: "up",
     },
     {
       title: "Monthly Payment",
-      value: "₹2,18,400",
+      value: dashboardData ? formatCurrency(dashboardData.payments?.monthlyPayment) : "—",
       description: "Payments collected this month",
       icon: <FiDollarSign />,
       iconBg: "bg-teal-50",
       iconColor: "text-teal-600",
-      trend: "+10.2%",
-      trendType: "up",
-    },
-  ];
-
-  const recentClinics = [
-    {
-      name: "City Care Clinic",
-      email: "citycare@example.com",
-      plan: "Yearly",
-      status: "Active",
-      amount: "₹9,999",
-    },
-    {
-      name: "Health Plus Center",
-      email: "healthplus@example.com",
-      plan: "Monthly",
-      status: "Active",
-      amount: "₹999",
-    },
-    {
-      name: "Wellness Clinic",
-      email: "wellness@example.com",
-      plan: "Monthly",
-      status: "Pending",
-      amount: "₹999",
-    },
-    {
-      name: "MediCare Clinic",
-      email: "medicare@example.com",
-      plan: "Yearly",
-      status: "Inactive",
-      amount: "₹9,999",
     },
   ];
 
@@ -167,23 +167,9 @@ const DashBoard = () => {
             </div>
 
             {/* Card bottom */}
-            <div className="flex items-center justify-between gap-2 mt-5">
-              <p className="text-xs text-gray-400">{stat.description}</p>
-
-              <span
-                className={`flex items-center gap-1 text-xs font-medium whitespace-nowrap ${
-                  stat.trendType === "up" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {stat.trendType === "up" ? (
-                  <FiArrowUpRight />
-                ) : (
-                  <FiArrowDownRight />
-                )}
-
-                {stat.trend}
-              </span>
-            </div>
+            <p className="text-xs text-gray-400 mt-5">
+              {isLoadingDashboard ? "Loading analytics..." : stat.description}
+            </p>
           </div>
         ))}
       </div>
@@ -232,42 +218,56 @@ const DashBoard = () => {
 
             <tbody className="divide-y divide-gray-100">
               {recentClinics.map((clinic) => (
-                <tr key={clinic.email} className="hover:bg-gray-50 transition">
+                <tr key={clinic._id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {clinic.name}
+                        {clinic.clinicName}
                       </p>
 
                       <p className="text-xs text-gray-500 mt-1">
-                        {clinic.email}
+                        {clinic.clinicEmail}
                       </p>
                     </div>
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {clinic.plan}
+                    {clinic.currentSubscription?.plan || "—"}
                   </td>
 
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {clinic.amount}
+                    {clinic.currentSubscription
+                      ? formatCurrency(clinic.currentSubscription.amount)
+                      : "—"}
                   </td>
 
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                        clinic.status === "Active"
+                        clinic.status?.toLowerCase() === "active"
                           ? "bg-green-50 text-green-700"
-                          : clinic.status === "Pending"
-                            ? "bg-orange-50 text-orange-700"
-                            : "bg-red-50 text-red-700"
+                          : "bg-red-50 text-red-700"
                       }`}
                     >
-                      {clinic.status}
+                      {clinic.status || "Unknown"}
                     </span>
                   </td>
                 </tr>
               ))}
+              {!isLoadingClinics && recentClinics.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                    No clinics found.
+                  </td>
+                </tr>
+              )}
+              {isLoadingClinics && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                    Loading clinics...
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

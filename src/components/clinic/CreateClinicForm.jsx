@@ -45,14 +45,23 @@ const CreateClinicForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      await ApiService.createClinic(data);
+      const response = await ApiService.createClinic(data);
+      const createdClinicId =
+        response.data?.data?.clinic?._id
+        || response.data?.data?._id
+        || response.data?.clinic?._id
+        || response.data?._id;
 
-      toast.success("Create Clinic Successfully ");
-
-      navigate("/clinic");
+      if (createdClinicId) {
+        toast.success("Clinic created successfully.");
+        navigate("/subscription/create", { state: { clinicId: createdClinicId } });
+      } else {
+        toast.warning("Clinic created. Select it from the subscription page.");
+        navigate("/subscription/create");
+      }
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "Clinic failed. Please try again.",
+        error?.response?.data?.message || error?.message || "Clinic failed. Please try again.",
       );
     }
   };

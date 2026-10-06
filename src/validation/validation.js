@@ -71,8 +71,6 @@ export const createSubscriptionSchema = z.object({
   amount: z.coerce.number().min(1, "Amount must be greater than 0"),
   startDate: z.string().min(1, "Start date is required"),
   expiryDate: z.string().min(1, "Expiry date is required"),
-  status: z.string().min(1, "Please select status"),
-  remarks: z.string().max(500, "Remarks cannot exceed 500 characters").optional(),
 });
 
 export const createPaymentSchema = z.object({
@@ -82,6 +80,4 @@ export const createPaymentSchema = z.object({
   paymentDate: z.string().min(1, "Payment date is required"),
   paymentMethod: z.string().min(1, "Please select a payment method"),
   paymentStatus: z.string().min(1, "Please select payment status"),
-  referenceNumber: z.string().min(2, "Reference number / Transaction ID is required"),
-  remarks: z.string().max(500, "Remarks cannot exceed 500 characters").optional(),
 });

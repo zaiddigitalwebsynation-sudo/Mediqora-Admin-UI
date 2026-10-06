@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createSubscriptionSchema } from '../../validation/validation';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ApiService from '../../services/service';
+import { toast } from 'react-toastify';
 import { 
   Building2, 
   MapPin, 
@@ -9,38 +12,16 @@ import {
   Plus, 
   Calendar, 
   DollarSign, 
-  Clock, 
-  Settings, 
   Award, 
   RotateCw 
 } from 'lucide-react';
 
-// Sample dummy data (aap isse API se dynamic laa sakte hain)
-const mockClinics = [
-  {
-    id: "clinic-1",
-    name: "City Care Clinic",
-    status: "Active",
-    owner: "Dr. Zaid Malik",
-    email: "citycare@gmail.com",
-    phone: "+91 98765 43210",
-    address: "Sector 16, Noida",
-    statePincode: "Uttar Pradesh - 201301"
-  },
-  {
-    id: "clinic-2",
-    name: "Apex Healthcare",
-    status: "Active",
-    owner: "Dr. Rahul Sharma",
-    email: "apex@health.com",
-    phone: "+91 91234 56789",
-    address: "Connaught Place, New Delhi",
-    statePincode: "Delhi - 110001"
-  }
-];
-
 const CreateSubscriptionForm = () => {
-  const [selectedClinic, setSelectedClinic] = useState(mockClinics[0]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [clinics, setClinics] = useState([]);
+  const [selectedClinic, setSelectedClinic] = useState(null);
+  const [isLoadingClinics, setIsLoadingClinics] = useState(true);
 
   const {
     register,
@@ -52,30 +33,123 @@ const CreateSubscriptionForm = () => {
   } = useForm({
     resolver: zodResolver(createSubscriptionSchema),
     defaultValues: {
-      clinicId: mockClinics[0].id,
-      plan: 'Professional',
-      billingCycle: 'Yearly',
-      amount: 9999,
-      startDate: '2025-10-01',
-      expiryDate: '2026-09-30',
-      status: 'Pending',
-      remarks: ''
+      clinicId: '',
+      plan: '',
+      billingCycle: '',
+      amount: '',
+      startDate: '',
+      expiryDate: ''
     }
   });
 
-  const remarksValue = watch("remarks", "");
+  const clinicId = watch("clinicId");
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadClinics = async () => {
+      try {
+        const response = await ApiService.getClinics();
+        const fetchedClinics = response.data?.data?.clinics || [];
+        if (!isActive) return;
+        setClinics(fetchedClinics);
+        const requestedClinicId = location.state?.clinicId || "";
+        if (requestedClinicId) {
+          setValue("clinicId", requestedClinicId, { shouldValidate: true });
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load clinics.");
+        }
+      } finally {
+        if (isActive) setIsLoadingClinics(false);
+      }
+    };
+
+    loadClinics();
+    return () => {
+      isActive = false;
+    };
+  }, [location.state, setValue]);
+
+  useEffect(() => {
+    if (!clinicId) {
+      setSelectedClinic(null);
+      return undefined;
+    }
+
+    let isActive = true;
+    const clinicFromList = clinics.find((clinic) => clinic._id === clinicId);
+    setSelectedClinic(clinicFromList || null);
+
+    const loadClinicDetails = async () => {
+      try {
+        const response = await ApiService.getClinic(clinicId);
+        if (isActive) {
+          setSelectedClinic(response.data?.data?.clinic || clinicFromList || null);
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load clinic details.");
+        }
+      }
+    };
+
+    loadClinicDetails();
+    return () => {
+      isActive = false;
+    };
+  }, [clinicId, clinics]);
 
   const handleClinicChange = (e) => {
-    const id = e.target.value;
-    setValue("clinicId", id);
-    const found = mockClinics.find(c => c.id === id);
-    setSelectedClinic(found || null);
+    setValue("clinicId", e.target.value, { shouldValidate: true });
+  };
+
+  const handleReset = () => {
+    reset({
+      clinicId: selectedClinic?._id || "",
+      plan: '',
+      billingCycle: '',
+      amount: '',
+      startDate: '',
+      expiryDate: ''
+    });
   };
 
   const onSubmit = async (data) => {
-    console.log("Submitted Payload:", JSON.stringify(data, null, 2));
-    // Yahan API Call karein:
-    // await axios.post('/api/v1/subscriptions', data);
+    try {
+      const payload = {
+        clinic: data.clinicId,
+        plan: data.plan,
+        billingCycle: data.billingCycle,
+        amount: data.amount,
+        startDate: data.startDate,
+        expiryDate: data.expiryDate,
+      };
+      const response = await ApiService.createSubscription(payload);
+      const responseData = response.data?.data || response.data;
+      const createdSubscription = responseData?.subscription || responseData;
+      const subscriptionId = createdSubscription?._id || createdSubscription?.id;
+      toast.success("Subscription created successfully.");
+      navigate("/payment/create", {
+        state: {
+          clinicId: payload.clinic,
+          subscription: {
+            ...createdSubscription,
+            _id: subscriptionId,
+            plan: payload.plan,
+            billingCycle: payload.billingCycle,
+            amount: payload.amount,
+            startDate: payload.startDate,
+            expiryDate: payload.expiryDate,
+          },
+        },
+      });
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to create subscription. Please try again.",
+      );
+    }
   };
 
   return (
@@ -101,14 +175,23 @@ const CreateSubscriptionForm = () => {
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             <select
               {...register("clinicId")}
+              value={clinicId}
               onChange={handleClinicChange}
+              disabled={isLoadingClinics || clinics.length === 0}
               className={`w-full pl-9 pr-8 py-2 bg-background border ${
                 errors.clinicId ? 'border-red-500' : 'border-border'
               } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
             >
-              {mockClinics.map((clinic) => (
-                <option key={clinic.id} value={clinic.id}>
-                  {clinic.name}
+              <option value="" disabled>
+                {isLoadingClinics
+                  ? "Loading clinics..."
+                  : clinics.length > 0
+                    ? "Select a clinic"
+                    : "No clinics available"}
+              </option>
+              {clinics.map((clinic) => (
+                <option key={clinic._id} value={clinic._id}>
+                  {clinic.clinicName}
                 </option>
               ))}
             </select>
@@ -128,16 +211,23 @@ const CreateSubscriptionForm = () => {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-text-primary">{selectedClinic.name}</h3>
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded-full">
+                  <h3 className="text-sm font-semibold text-text-primary">{selectedClinic.clinicName}</h3>
+                  <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                    selectedClinic.status?.toLowerCase() === 'active'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
                     {selectedClinic.status}
                   </span>
                 </div>
                 <p className="text-xs text-text-secondary">
-                  <span className="font-medium text-text-primary">Owner:</span> {selectedClinic.owner}
+                  <span className="font-medium text-text-primary">Owner:</span> {selectedClinic.owner?.name || "—"}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  <span className="font-medium text-text-primary">Email:</span> {selectedClinic.email} &nbsp;|&nbsp; <span className="font-medium text-text-primary">Phone:</span> {selectedClinic.phone}
+                  <span className="font-medium text-text-primary">Email:</span> {selectedClinic.clinicEmail || "—"} &nbsp;|&nbsp; <span className="font-medium text-text-primary">Phone:</span> {selectedClinic.phone || "—"}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  <span className="font-medium text-text-primary">Owner contact:</span> {selectedClinic.owner?.email || "—"} &nbsp;|&nbsp; {selectedClinic.owner?.phone || "—"}
                 </p>
               </div>
             </div>
@@ -148,8 +238,12 @@ const CreateSubscriptionForm = () => {
               </div>
               <div className="space-y-1">
                 <h4 className="text-xs font-semibold text-text-primary">Address</h4>
-                <p className="text-xs text-text-secondary">{selectedClinic.address}</p>
-                <p className="text-xs text-text-secondary">{selectedClinic.statePincode}</p>
+                <p className="text-xs text-text-secondary">{selectedClinic.address?.addressLine || "—"}</p>
+                <p className="text-xs text-text-secondary">
+                  {[selectedClinic.address?.city, selectedClinic.address?.state, selectedClinic.address?.pincode]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                </p>
               </div>
             </div>
           </div>
@@ -182,6 +276,7 @@ const CreateSubscriptionForm = () => {
                   errors.plan ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
+                <option value="" disabled>Select a plan</option>
                 <option value="Basic">Basic</option>
                 <option value="Professional">Professional</option>
                 <option value="Enterprise">Enterprise</option>
@@ -206,6 +301,7 @@ const CreateSubscriptionForm = () => {
                   errors.billingCycle ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
+                <option value="" disabled>Select billing cycle</option>
                 <option value="Monthly">Monthly</option>
                 <option value="Yearly">Yearly</option>
                 <option value="Quarterly">Quarterly</option>
@@ -229,7 +325,7 @@ const CreateSubscriptionForm = () => {
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
               <input
                 type="number"
-                placeholder="9999"
+                placeholder="Enter amount"
                 {...register("amount")}
                 className={`w-full pl-9 pr-3 py-2 bg-background border ${
                   errors.amount ? 'border-red-500' : 'border-border'
@@ -282,71 +378,13 @@ const CreateSubscriptionForm = () => {
           </div>
         </div>
 
-        {/* Status Dropdown */}
-        <div>
-          <label className="block text-xs font-medium text-text-primary mb-1.5">
-            Status <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-            <select
-              {...register("status")}
-              className={`w-full pl-9 pr-8 py-2 bg-background border ${
-                errors.status ? 'border-red-500' : 'border-border'
-              } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
-            >
-              <option value="Pending">Pending</option>
-              <option value="Active">Active</option>
-              <option value="Expired">Expired</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-          </div>
-          {errors.status && (
-            <span className="text-xs text-red-500 mt-1 block">{errors.status.message}</span>
-          )}
-        </div>
-      </div>
-
-      {/* 3. Additional Information Card */}
-      <div className="bg-surface rounded-xl p-6 shadow-sm border border-border">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-primary-light text-primary rounded-xl">
-            <Settings className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-text-primary">Additional Information</h2>
-            <p className="text-xs text-text-secondary">Add any additional notes or remarks (optional).</p>
-          </div>
-        </div>
-
-        {/* Textarea */}
-        <div>
-          <label className="block text-xs font-medium text-text-primary mb-1.5">Remarks</label>
-          <div className="relative">
-            <textarea
-              rows={4}
-              maxLength={500}
-              placeholder="e.g. First year subscription, special discount, etc..."
-              {...register("remarks")}
-              className={`w-full p-3 bg-background border ${
-                errors.remarks ? 'border-red-500' : 'border-border'
-              } rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none`}
-            />
-            <span className="absolute right-3 bottom-3 text-[10px] text-text-muted">
-              {remarksValue ? remarksValue.length : 0}/500
-            </span>
-          </div>
-          {errors.remarks && (
-            <span className="text-xs text-red-500 mt-1 block">{errors.remarks.message}</span>
-          )}
-        </div>
       </div>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-2">
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={handleReset}
           className="px-5 py-2 text-sm font-medium text-text-primary bg-secondary hover:bg-secondary-hover border border-border rounded-lg transition-colors"
         >
           Cancel

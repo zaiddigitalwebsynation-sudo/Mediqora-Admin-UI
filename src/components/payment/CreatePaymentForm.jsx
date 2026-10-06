@@ -1,72 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createPaymentSchema } from '../../validation/validation';
+import { useLocation } from 'react-router-dom';
+import ApiService from '../../services/service';
+import { toast } from 'react-toastify';
 import { 
   Building2, 
+  MapPin,
   ChevronDown, 
   Plus, 
   Calendar, 
   DollarSign, 
   CreditCard, 
   CheckCircle2, 
-  Hash, 
-  FileText, 
   Award, 
   Receipt
 } from 'lucide-react';
 
-// Sample Mock Data (isey aap API se integrate kar sakte hain)
-const mockClinicsWithSubscriptions = [
-  {
-    id: "clinic-1",
-    name: "City Care Clinic",
-    status: "Active",
-    owner: "Dr. Zaid Malik",
-    email: "citycare@gmail.com",
-    phone: "+91 98765 43210",
-    subscriptions: [
-      {
-        id: "sub-1",
-        label: "Professional (Yearly) - ₹9999",
-        plan: "Professional",
-        billingCycle: "Yearly",
-        amount: 9999,
-        expiryDate: "2026-09-30"
-      },
-      {
-        id: "sub-2",
-        label: "Basic (Monthly) - ₹999",
-        plan: "Basic",
-        billingCycle: "Monthly",
-        amount: 999,
-        expiryDate: "2026-10-30"
-      }
-    ]
-  },
-  {
-    id: "clinic-2",
-    name: "Apex Healthcare",
-    status: "Active",
-    owner: "Dr. Rahul Sharma",
-    email: "apex@health.com",
-    phone: "+91 91234 56789",
-    subscriptions: [
-      {
-        id: "sub-3",
-        label: "Enterprise (Yearly) - ₹24999",
-        plan: "Enterprise",
-        billingCycle: "Yearly",
-        amount: 24999,
-        expiryDate: "2027-01-15"
-      }
-    ]
-  }
-];
+const getTodayDate = () => {
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  return today.toISOString().slice(0, 10);
+};
 
 const CreatePaymentForm = () => {
-  const [selectedClinic, setSelectedClinic] = useState(mockClinicsWithSubscriptions[0]);
-  const [selectedSubscription, setSelectedSubscription] = useState(mockClinicsWithSubscriptions[0].subscriptions[0]);
+  const location = useLocation();
+  const [clinics, setClinics] = useState([]);
+  const [selectedClinic, setSelectedClinic] = useState(null);
+  const [selectedSubscription, setSelectedSubscription] = useState(null);
+  const [isLoadingClinics, setIsLoadingClinics] = useState(true);
+  const [isLoadingClinicDetails, setIsLoadingClinicDetails] = useState(false);
 
   const {
     register,
@@ -78,57 +42,141 @@ const CreatePaymentForm = () => {
   } = useForm({
     resolver: zodResolver(createPaymentSchema),
     defaultValues: {
-      clinicId: mockClinicsWithSubscriptions[0].id,
-      subscriptionId: mockClinicsWithSubscriptions[0].subscriptions[0].id,
-      amount: mockClinicsWithSubscriptions[0].subscriptions[0].amount,
-      paymentDate: '2025-10-01',
-      paymentMethod: 'UPI',
-      paymentStatus: 'Paid',
-      referenceNumber: 'UPI1123456',
-      remarks: ''
+      clinicId: '',
+      subscriptionId: '',
+      amount: '',
+      paymentDate: getTodayDate(),
+      paymentMethod: '',
+      paymentStatus: '',
     }
   });
 
-  const remarksValue = watch("remarks", "");
+  const clinicId = watch("clinicId");
+  const subscriptionId = watch("subscriptionId", "");
 
-  // Handle Clinic Dropdown Change
-  const handleClinicChange = (e) => {
-    const clinicId = e.target.value;
-    setValue("clinicId", clinicId);
-    
-    const foundClinic = mockClinicsWithSubscriptions.find(c => c.id === clinicId);
-    setSelectedClinic(foundClinic || null);
+  useEffect(() => {
+    let isActive = true;
 
-    if (foundClinic && foundClinic.subscriptions.length > 0) {
-      const firstSub = foundClinic.subscriptions[0];
-      setSelectedSubscription(firstSub);
-      setValue("subscriptionId", firstSub.id);
-      setValue("amount", firstSub.amount);
-    } else {
+    const loadClinics = async () => {
+      try {
+        const response = await ApiService.getClinics();
+        const fetchedClinics = response.data?.data?.clinics || [];
+        if (!isActive) return;
+        setClinics(fetchedClinics);
+        const requestedClinicId = location.state?.clinicId || "";
+        if (requestedClinicId) {
+          setValue("clinicId", requestedClinicId, { shouldValidate: true });
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load clinics.");
+        }
+      } finally {
+        if (isActive) setIsLoadingClinics(false);
+      }
+    };
+
+    loadClinics();
+    return () => {
+      isActive = false;
+    };
+  }, [location.state, setValue]);
+
+  useEffect(() => {
+    if (!clinicId) {
+      setSelectedClinic(null);
       setSelectedSubscription(null);
-      setValue("subscriptionId", "");
-      setValue("amount", 0);
+      setIsLoadingClinicDetails(false);
+      return undefined;
+    }
+
+    let isActive = true;
+    const clinicFromList = clinics.find((clinic) => clinic._id === clinicId);
+    setSelectedClinic(clinicFromList || null);
+    setSelectedSubscription(null);
+    setValue("subscriptionId", "");
+    setValue("amount", "");
+
+    const loadClinicDetails = async () => {
+      setIsLoadingClinicDetails(true);
+      try {
+        const response = await ApiService.getClinic(clinicId);
+        if (!isActive) return;
+        const clinic = response.data?.data?.clinic || clinicFromList || null;
+        const clinicSubscription = clinic?.currentSubscription
+          || response.data?.data?.subscription
+          || null;
+        const createdSubscription = location.state?.clinicId === clinicId
+          ? location.state?.subscription
+          : null;
+        const subscription = createdSubscription
+          ? {
+              ...clinicSubscription,
+              ...createdSubscription,
+              _id: createdSubscription._id || clinicSubscription?._id,
+            }
+          : clinicSubscription;
+        setSelectedClinic(clinic ? { ...clinic, currentSubscription: subscription } : null);
+        setSelectedSubscription(subscription);
+        if (subscription) {
+          setValue("subscriptionId", subscription._id);
+          setValue("amount", subscription.amount);
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error(error?.response?.data?.message || "Unable to load clinic details.");
+        }
+      } finally {
+        if (isActive) setIsLoadingClinicDetails(false);
+      }
+    };
+
+    loadClinicDetails();
+    return () => {
+      isActive = false;
+    };
+  }, [clinicId, clinics, location.state, setValue]);
+
+  const handleClinicChange = (e) => {
+    setValue("clinicId", e.target.value, { shouldValidate: true });
+  };
+
+  const handleSubscriptionChange = (e) => {
+    const subscriptionId = e.target.value;
+    setValue("subscriptionId", subscriptionId, { shouldValidate: true });
+    if (selectedSubscription?._id === subscriptionId) {
+      setValue("amount", selectedSubscription.amount);
     }
   };
 
-  // Handle Subscription Dropdown Change
-  const handleSubscriptionChange = (e) => {
-    const subId = e.target.value;
-    setValue("subscriptionId", subId);
-
-    if (selectedClinic) {
-      const foundSub = selectedClinic.subscriptions.find(s => s.id === subId);
-      setSelectedSubscription(foundSub || null);
-      if (foundSub) {
-        setValue("amount", foundSub.amount);
-      }
-    }
+  const handleReset = () => {
+    reset({
+      clinicId: selectedClinic?._id || "",
+      subscriptionId: selectedSubscription?._id || "",
+      amount: selectedSubscription?.amount ?? "",
+      paymentDate: getTodayDate(),
+      paymentMethod: '',
+      paymentStatus: '',
+    });
   };
 
   const onSubmit = async (data) => {
-    console.log("Payment Record Payload:", JSON.stringify(data, null, 2));
-    // Yahan API Call karein:
-    // await axios.post('/api/v1/payments', data);
+    try {
+      const payload = {
+        clinic: data.clinicId,
+        subscription: data.subscriptionId,
+        amount: data.amount,
+        paymentDate: data.paymentDate,
+        paymentMethod: data.paymentMethod.toLowerCase(),
+        paymentStatus: data.paymentStatus.toLowerCase(),
+      };
+      await ApiService.createPayment(payload);
+      toast.success("Payment recorded successfully.");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to record payment. Please try again.",
+      );
+    }
   };
 
   return (
@@ -156,14 +204,23 @@ const CreatePaymentForm = () => {
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
               <select
                 {...register("clinicId")}
+                value={clinicId}
                 onChange={handleClinicChange}
+                disabled={isLoadingClinics || clinics.length === 0}
                 className={`w-full pl-9 pr-8 py-2 bg-background border ${
                   errors.clinicId ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
-                {mockClinicsWithSubscriptions.map((clinic) => (
-                  <option key={clinic.id} value={clinic.id}>
-                    {clinic.name}
+                <option value="" disabled>
+                  {isLoadingClinics
+                    ? "Loading clinics..."
+                    : clinics.length > 0
+                      ? "Select a clinic"
+                      : "No clinics available"}
+                </option>
+                {clinics.map((clinic) => (
+                  <option key={clinic._id} value={clinic._id}>
+                    {clinic.clinicName}
                   </option>
                 ))}
               </select>
@@ -183,16 +240,23 @@ const CreatePaymentForm = () => {
               <Receipt className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
               <select
                 {...register("subscriptionId")}
+                value={subscriptionId}
                 onChange={handleSubscriptionChange}
+                disabled={isLoadingClinicDetails || !selectedSubscription}
                 className={`w-full pl-9 pr-8 py-2 bg-background border ${
                   errors.subscriptionId ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
-                {selectedClinic?.subscriptions.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.label}
+                {!selectedSubscription && (
+                  <option value="">
+                    {isLoadingClinicDetails ? "Loading subscription..." : "No current subscription"}
                   </option>
-                ))}
+                )}
+                {selectedSubscription && (
+                  <option value={selectedSubscription._id}>
+                    {selectedSubscription.plan} ({selectedSubscription.billingCycle}) - ₹{selectedSubscription.amount}
+                  </option>
+                )}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             </div>
@@ -212,16 +276,38 @@ const CreatePaymentForm = () => {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-text-primary">{selectedClinic.name}</h3>
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded-full">
+                  <h3 className="text-sm font-semibold text-text-primary">{selectedClinic.clinicName}</h3>
+                  <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                    selectedClinic.status?.toLowerCase() === 'active'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
                     {selectedClinic.status}
                   </span>
                 </div>
                 <p className="text-xs text-text-secondary">
-                  <span className="font-medium text-text-primary">Owner:</span> {selectedClinic.owner}
+                  <span className="font-medium text-text-primary">Owner:</span> {selectedClinic.owner?.name || "—"}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  <span className="font-medium text-text-primary">Email:</span> {selectedClinic.email} &nbsp;|&nbsp; <span className="font-medium text-text-primary">Phone:</span> {selectedClinic.phone}
+                  <span className="font-medium text-text-primary">Email:</span> {selectedClinic.clinicEmail || "—"} &nbsp;|&nbsp; <span className="font-medium text-text-primary">Phone:</span> {selectedClinic.phone || "—"}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  <span className="font-medium text-text-primary">Owner contact:</span> {selectedClinic.owner?.email || "—"} &nbsp;|&nbsp; {selectedClinic.owner?.phone || "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-primary-light text-primary rounded-lg shrink-0 mt-0.5">
+                <MapPin className="w-4 h-4" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-text-primary">Address</h4>
+                <p className="text-xs text-text-secondary">{selectedClinic.address?.addressLine || "—"}</p>
+                <p className="text-xs text-text-secondary">
+                  {[selectedClinic.address?.city, selectedClinic.address?.state, selectedClinic.address?.pincode]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
                 </p>
               </div>
             </div>
@@ -323,10 +409,11 @@ const CreatePaymentForm = () => {
                   errors.paymentMethod ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
-                <option value="UPI">UPI</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Card">Credit/Debit Card</option>
-                <option value="Cash">Cash</option>
+                <option value="" disabled>Select payment method</option>
+                <option value="upi">UPI</option>
+                <option value="bank transfer">Bank Transfer</option>
+                <option value="card">Credit/Debit Card</option>
+                <option value="cash">Cash</option>
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             </div>
@@ -348,9 +435,10 @@ const CreatePaymentForm = () => {
                   errors.paymentStatus ? 'border-red-500' : 'border-border'
                 } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
               >
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-                <option value="Failed">Failed</option>
+                <option value="" disabled>Select payment status</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             </div>
@@ -360,58 +448,13 @@ const CreatePaymentForm = () => {
           </div>
         </div>
 
-        {/* Reference Number & Remarks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Reference Number */}
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1.5">
-              Reference Number <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                placeholder="e.g. UPI1123456"
-                {...register("referenceNumber")}
-                className={`w-full pl-9 pr-3 py-2 bg-background border ${
-                  errors.referenceNumber ? 'border-red-500' : 'border-border'
-                } rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
-              />
-            </div>
-            {errors.referenceNumber && (
-              <span className="text-xs text-red-500 mt-1 block">{errors.referenceNumber.message}</span>
-            )}
-          </div>
-
-          {/* Remarks */}
-          <div>
-            <label className="block text-xs font-medium text-text-primary mb-1.5">Remarks</label>
-            <div className="relative">
-              <textarea
-                rows={4}
-                maxLength={500}
-                placeholder="e.g. Yearly subscription payment"
-                {...register("remarks")}
-                className={`w-full p-3 bg-background border ${
-                  errors.remarks ? 'border-red-500' : 'border-border'
-                } rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none`}
-              />
-              <span className="absolute right-3 bottom-3 text-[10px] text-text-muted">
-                {remarksValue ? remarksValue.length : 0}/500
-              </span>
-            </div>
-            {errors.remarks && (
-              <span className="text-xs text-red-500 mt-1 block">{errors.remarks.message}</span>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-2">
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={handleReset}
           className="px-5 py-2 text-sm font-medium text-text-primary bg-secondary hover:bg-secondary-hover border border-border rounded-lg transition-colors"
         >
           Cancel
