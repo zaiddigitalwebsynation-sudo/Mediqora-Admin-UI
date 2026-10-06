@@ -8,10 +8,13 @@ import ResetPassword from "../pages/ResetPassword";
 
 import Layout from "../layout/Layout";
 import Clinic from "../pages/Clinic";
+import CreateClinic from "../pages/CreateClinic";
 
 import useAuth from "../hooks/useAuth";
 import AuthLoader from "../components/shared/AuthLoader";
 import ProtectedRoute from "./ProtectedRoute";
+import CreateSubscription from "../pages/CreateSubscription";
+import CreatePayment from "../pages/CreatePayment";
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
@@ -32,13 +35,23 @@ const AppRoutes = () => {
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       <Route element={<ProtectedRoute />}>
+
         <Route element={<Layout />}>
+
           <Route path="/" element={<DashBoard />} />
 
           <Route path="/clinic" element={<Clinic />} />
 
+          <Route path="/clinic/create" element={<CreateClinic />} />
+
           <Route path="/clinic/:id" element={<ViewClinic />} />
+
+          <Route path="/subscription/create" element={<CreateSubscription />} />
+
+          <Route path="/payment/create" element={<CreatePayment />} />
+
         </Route>
+        
       </Route>
 
       <Route

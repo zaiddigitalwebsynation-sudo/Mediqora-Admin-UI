@@ -44,3 +44,44 @@ export const resetPasswordSchema = z.object({
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+export const createClinicSchema = z.object({
+  clinicName: z.string().min(2, "Clinic name is required"),
+  clinicEmail: z.string().email("Invalid clinic email address"),
+  phone: z.string().min(10, "Valid phone number is required"),
+
+  owner: z.object({
+    name: z.string().min(2, "Owner name is required"),
+    email: z.string().email("Invalid owner email address"),
+    phone: z.string().min(10, "Valid owner phone number is required"),
+  }),
+
+  address: z.object({
+    addressLine: z.string().min(3, "Address is required"),
+    city: z.string().min(2, "City is required"),
+    state: z.string().min(2, "Please select state"),
+    pincode: z.string().length(6, "Pincode must be 6 digits"),
+  }),
+});
+
+export const createSubscriptionSchema = z.object({
+  clinicId: z.string().min(1, "Please select a clinic"),
+  plan: z.string().min(1, "Please select a subscription plan"),
+  billingCycle: z.string().min(1, "Please select a billing cycle"),
+  amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+  startDate: z.string().min(1, "Start date is required"),
+  expiryDate: z.string().min(1, "Expiry date is required"),
+  status: z.string().min(1, "Please select status"),
+  remarks: z.string().max(500, "Remarks cannot exceed 500 characters").optional(),
+});
+
+export const createPaymentSchema = z.object({
+  clinicId: z.string().min(1, "Please select a clinic"),
+  subscriptionId: z.string().min(1, "Please select a subscription"),
+  amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentMethod: z.string().min(1, "Please select a payment method"),
+  paymentStatus: z.string().min(1, "Please select payment status"),
+  referenceNumber: z.string().min(2, "Reference number / Transaction ID is required"),
+  remarks: z.string().max(500, "Remarks cannot exceed 500 characters").optional(),
+});
