@@ -15,6 +15,7 @@ import AuthLoader from "../components/shared/AuthLoader";
 import ProtectedRoute from "./ProtectedRoute";
 import CreateSubscription from "../pages/CreateSubscription";
 import CreatePayment from "../pages/CreatePayment";
+import UpdateClinic from "../pages/UpdateClinic";
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
@@ -43,6 +44,8 @@ const AppRoutes = () => {
           <Route path="/clinic" element={<Clinic />} />
 
           <Route path="/clinic/create" element={<CreateClinic />} />
+
+          <Route path="/clinic/:id/edit" element={<UpdateClinic />} />
 
           <Route path="/clinic/:id" element={<ViewClinic />} />
 

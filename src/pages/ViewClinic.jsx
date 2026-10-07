@@ -12,6 +12,7 @@ import {
   User,
   IndianRupee,
   Clock3,
+  History,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ApiService from "../services/service";
@@ -59,6 +60,10 @@ const ViewClinic = () => {
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [payments, setPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [subscriptionHistory, setSubscriptionHistory] = useState([]);
+  const [totalSubscriptions, setTotalSubscriptions] = useState(0);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -87,6 +92,28 @@ const ViewClinic = () => {
       isActive = false;
     };
   }, [id]);
+
+  const toggleSubscriptionHistory = async () => {
+    if (isHistoryVisible) {
+      setIsHistoryVisible(false);
+      return;
+    }
+
+    setIsHistoryVisible(true);
+    if (subscriptionHistory.length > 0 || isHistoryLoading) return;
+
+    setIsHistoryLoading(true);
+    try {
+      const response = await ApiService.getClinicSubscriptionHistory(id);
+      const data = response.data?.data;
+      setSubscriptionHistory(data?.subscriptions || []);
+      setTotalSubscriptions(data?.totalSubscriptions || 0);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Unable to load subscription history.");
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
 
   if (isLoading) {
     return <p className="py-12 text-center text-sm text-gray-500">Loading clinic details...</p>;
@@ -134,8 +161,16 @@ const ViewClinic = () => {
               {clinic.status || "Unknown"}
             </span>
           </div>
-         
         </div>
+        <button
+          type="button"
+          onClick={toggleSubscriptionHistory}
+          aria-expanded={isHistoryVisible}
+          className="ml-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-primary hover:text-primary"
+        >
+          <History className="h-4 w-4" />
+          {isHistoryVisible ? "Hide Subscription History" : "View Subscription History"}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -292,6 +327,61 @@ const ViewClinic = () => {
           </section>
         </div>
       </div>
+
+      {isHistoryVisible && (
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <SectionHeader
+            title="Subscription History"
+            description={`${totalSubscriptions} subscription(s)`}
+          />
+          {isHistoryLoading ? (
+            <p className="p-5 text-sm text-gray-500">Loading subscription history...</p>
+          ) : subscriptionHistory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left">
+                <thead className="border-b border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Plan</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Billing Cycle</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Amount</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Start Date</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Expiry Date</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-600">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {subscriptionHistory.map((historyItem) => (
+                    <tr key={historyItem._id}>
+                      <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                        {historyItem.plan || "—"}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {historyItem.billingCycle || "—"}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {formatCurrency(historyItem.amount)}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {formatDate(historyItem.startDate)}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {formatDate(historyItem.expiryDate)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${getStatusStyle(historyItem.status)}`}>
+                          {historyItem.status || "Unknown"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="p-5 text-sm text-gray-500">No subscription history found.</p>
+          )}
+        </section>
+      )}
     </div>
   );
 };

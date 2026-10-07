@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import ApiService from "../../services/service";
 
@@ -179,7 +179,7 @@ const ClinicTable = () => {
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[1000px] text-left">
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
                 <th className="px-5 py-3 text-xs font-semibold text-gray-600">Clinic</th>
@@ -259,13 +259,26 @@ const ClinicTable = () => {
                     </select>
                   </td>
                   <td className="px-5 py-4">
-                    <button
-                      onClick={() => navigate(`/clinic/${clinic._id}`)}
-                      type="button"
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-primary hover:text-primary"
-                    >
-                      View
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/clinic/${clinic._id}`)}
+                        type="button"
+                        aria-label={`View ${clinic.clinicName}`}
+                        title="View clinic"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-700 transition hover:border-primary hover:text-primary"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/clinic/${clinic._id}/edit`)}
+                        type="button"
+                        aria-label={`Update ${clinic.clinicName}`}
+                        title="Update clinic"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-primary transition hover:bg-primary hover:text-white"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

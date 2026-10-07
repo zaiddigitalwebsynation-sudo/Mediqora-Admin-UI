@@ -11,11 +11,11 @@ import {
   Plus,
 } from "lucide-react";
 import ApiService from "../../services/service";
-import { useState } from "react";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const CreateClinicForm = () => {
+const CreateClinicForm = ({ clinicId, initialClinic }) => {
   const {
     register,
     handleSubmit,
@@ -42,9 +42,41 @@ const CreateClinicForm = () => {
   });
 
   const navigate = useNavigate();
+  const savingLabel = clinicId ? "Updating..." : "Creating...";
+  const idleLabel = clinicId ? "Update Clinic" : "Create Clinic";
+  const submitLabel = isSubmitting
+    ? savingLabel
+    : idleLabel;
+
+  useEffect(() => {
+    if (!initialClinic) return;
+    reset({
+      clinicName: initialClinic.clinicName || "",
+      clinicEmail: initialClinic.clinicEmail || "",
+      phone: initialClinic.phone || "",
+      owner: {
+        name: initialClinic.owner?.name || "",
+        email: initialClinic.owner?.email || "",
+        phone: initialClinic.owner?.phone || "",
+      },
+      address: {
+        addressLine: initialClinic.address?.addressLine || "",
+        city: initialClinic.address?.city || "",
+        state: initialClinic.address?.state || "",
+        pincode: initialClinic.address?.pincode || "",
+      },
+    });
+  }, [initialClinic, reset]);
 
   const onSubmit = async (data) => {
     try {
+      if (clinicId) {
+        await ApiService.updateClinic(clinicId, data);
+        toast.success("Clinic updated successfully.");
+        navigate("/clinic");
+        return;
+      }
+
       const response = await ApiService.createClinic(data);
       const createdClinicId =
         response.data?.data?.clinic?._id
@@ -368,7 +400,7 @@ const CreateClinicForm = () => {
       <div className="flex items-center justify-between pt-2">
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={() => (clinicId ? navigate("/clinic") : reset())}
           className="px-5 py-2 text-sm font-medium text-text-primary bg-secondary hover:bg-secondary-hover border border-border rounded-lg transition-colors"
         >
           Cancel
@@ -379,7 +411,7 @@ const CreateClinicForm = () => {
           className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-colors shadow-sm disabled:opacity-50"
         >
           <Plus className="w-4 h-4" />
-          {isSubmitting ? "Creating..." : "Create Clinic"}
+          {submitLabel}
         </button>
       </div>
     </form>
