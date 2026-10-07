@@ -71,6 +71,10 @@ export const createSubscriptionSchema = z.object({
   amount: z.coerce.number().min(1, "Amount must be greater than 0"),
   startDate: z.string().min(1, "Start date is required"),
   expiryDate: z.string().min(1, "Expiry date is required"),
+  status: z.enum(
+    ["active", "expired", "pending", "trial", "cancelled"],
+    { error: "Please select a subscription status" },
+  ),
 });
 
 export const createPaymentSchema = z.object({

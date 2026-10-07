@@ -12,6 +12,7 @@ import {
   Plus, 
   Calendar, 
   DollarSign, 
+  Clock,
   Award, 
   RotateCw 
 } from 'lucide-react';
@@ -38,7 +39,8 @@ const CreateSubscriptionForm = () => {
       billingCycle: '',
       amount: '',
       startDate: '',
-      expiryDate: ''
+      expiryDate: '',
+      status: ''
     }
   });
 
@@ -112,7 +114,8 @@ const CreateSubscriptionForm = () => {
       billingCycle: '',
       amount: '',
       startDate: '',
-      expiryDate: ''
+      expiryDate: '',
+      status: ''
     });
   };
 
@@ -125,6 +128,7 @@ const CreateSubscriptionForm = () => {
         amount: data.amount,
         startDate: data.startDate,
         expiryDate: data.expiryDate,
+        status: data.status,
       };
       const response = await ApiService.createSubscription(payload);
       const responseData = response.data?.data || response.data;
@@ -376,6 +380,29 @@ const CreateSubscriptionForm = () => {
               <span className="text-xs text-red-500 mt-1 block">{errors.expiryDate.message}</span>
             )}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-text-primary mb-1.5">
+            Status <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+            <select
+              {...register("status")}
+              className={`w-full pl-9 pr-8 py-2 bg-background border ${
+                errors.status ? 'border-red-500' : 'border-border'
+              } rounded-lg text-sm text-text-primary appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer`}
+            >
+              <option value="" disabled>Select status</option>
+              <option value="active">Active</option>
+              <option value="trial">Trial</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+          </div>
+          {errors.status && (
+            <span className="text-xs text-red-500 mt-1 block">{errors.status.message}</span>
+          )}
         </div>
 
       </div>

@@ -28,11 +28,11 @@ class ApiService {
   }
 
   updateClinic(clinicId, data) {
-    return ApiClient.put(Api.UPDATE_CLINIC_URL(clinicId), data);
+    return ApiClient.patch(Api.UPDATE_CLINIC_URL(clinicId), data);
   }
 
   updateClinicStatus(clinicId, data) {
-    return ApiClient.put(Api.UPDATE_CLINIC_STATUS_URL(clinicId), data);
+    return ApiClient.patch(Api.UPDATE_CLINIC_STATUS_URL(clinicId), data);
   }
 
   createSubscription(data) {
