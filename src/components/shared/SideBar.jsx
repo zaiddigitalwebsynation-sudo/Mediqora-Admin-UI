@@ -21,16 +21,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: "/clinic",
       icon: Building2,
     },
-    {
-      name: "Subscription",
-      path: "/subscription",
-      icon: WalletCards,
-    },
-    {
-      name: "Payment",
-      path: "/payment",
-      icon: CreditCard,
-    },
+
   ];
 
   return (

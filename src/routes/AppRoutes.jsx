@@ -12,6 +12,7 @@ import CreateClinic from "../pages/CreateClinic";
 
 import useAuth from "../hooks/useAuth";
 import AuthLoader from "../components/shared/AuthLoader";
+
 import ProtectedRoute from "./ProtectedRoute";
 import CreateSubscription from "../pages/CreateSubscription";
 import CreatePayment from "../pages/CreatePayment";

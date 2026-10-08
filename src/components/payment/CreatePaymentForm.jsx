@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createPaymentSchema } from '../../validation/validation';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ApiService from '../../services/service';
 import { toast } from 'react-toastify';
 import { 
@@ -31,6 +31,7 @@ const CreatePaymentForm = () => {
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [isLoadingClinics, setIsLoadingClinics] = useState(true);
   const [isLoadingClinicDetails, setIsLoadingClinicDetails] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -172,6 +173,7 @@ const CreatePaymentForm = () => {
       };
       await ApiService.createPayment(payload);
       toast.success("Payment recorded successfully.");
+      navigate("/clinic")
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Unable to record payment. Please try again.",
@@ -411,7 +413,7 @@ const CreatePaymentForm = () => {
               >
                 <option value="" disabled>Select payment method</option>
                 <option value="upi">UPI</option>
-                <option value="bank transfer">Bank Transfer</option>
+                <option value="bank_transfer">Bank Transfer</option>
                 <option value="card">Credit/Debit Card</option>
                 <option value="cash">Cash</option>
               </select>

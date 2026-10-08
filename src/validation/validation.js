@@ -31,6 +31,7 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
     newPassword: z
       .string()
+      
       .min(1, { message: "Password is required" })
       .min(6, { message: "Password must be at least 6 characters" })
       .regex(/[!@#$%^&*(),.?":{}|<>]/, {

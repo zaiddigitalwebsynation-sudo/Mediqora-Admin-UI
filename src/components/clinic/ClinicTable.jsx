@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, CreditCard, Eye, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import ApiService from "../../services/service";
 
@@ -35,6 +35,14 @@ const formatRemainingDays = (expiryDate) => {
   return remainingDays === null
     ? "Remaining: —"
     : `Remaining: ${Math.max(remainingDays, 0)} day(s)`;
+};
+
+const isSubscriptionExpired = (subscription) => {
+  if (subscription?.status?.toLowerCase() === "expired") return true;
+  if (!subscription?.expiryDate) return false;
+
+  const expiryTime = new Date(subscription.expiryDate).getTime();
+  return !Number.isNaN(expiryTime) && expiryTime < Date.now();
 };
 
 const getStatusStyle = (status) => {
@@ -260,6 +268,22 @@ const ClinicTable = () => {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
+                      {(!clinic.currentSubscription || isSubscriptionExpired(clinic.currentSubscription)) && (
+                        <button
+                          onClick={() =>
+                            navigate("/subscription/create", {
+                              state: { clinicId: clinic._id },
+                            })
+                          }
+                          type="button"
+                          aria-label={`${clinic.currentSubscription ? "Renew" : "Create"} subscription for ${clinic.clinicName}`}
+                          title={clinic.currentSubscription ? "Renew subscription" : "Create subscription"}
+                          className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary px-2.5 text-xs font-medium text-primary transition hover:bg-primary hover:text-white"
+                        >
+                          <CreditCard className="h-3.5 w-3.5" />
+                          {clinic.currentSubscription ? "Renew" : "Create subscription"}
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/clinic/${clinic._id}`)}
                         type="button"
