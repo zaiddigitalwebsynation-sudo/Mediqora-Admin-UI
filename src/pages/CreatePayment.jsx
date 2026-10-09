@@ -19,7 +19,7 @@ const CreatePayment = () => {
         </div>
 
         {/* Payment Form */}
-        <CreatePaymentForm />
+        <CreatePaymentForm />                 
       </div>
     </div>
   );

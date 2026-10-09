@@ -175,7 +175,7 @@ const LoginForm = () => {
                     Password
                   </label>
 
-                  <button
+                  {/* <button
                     type="button"
                     className="text-xs font-medium text-primary hover:underline"
                     onClick={() => {
@@ -183,7 +183,7 @@ const LoginForm = () => {
                     }}
                   >
                     Forgot password?
-                  </button>
+                  </button> */}
                 </div>
 
                 <div
