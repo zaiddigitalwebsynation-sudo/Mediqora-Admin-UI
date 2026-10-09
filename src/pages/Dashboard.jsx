@@ -3,7 +3,6 @@ import {
   FiBriefcase,
   FiCheckCircle,
   FiXCircle,
-  FiClock,
   FiAlertTriangle,
   FiCreditCard,
   FiDollarSign,
@@ -85,14 +84,6 @@ const DashBoard = () => {
       icon: <FiXCircle />,
       iconBg: "bg-red-50",
       iconColor: "text-red-600",
-    },
-    {
-      title: "Subscription Pending",
-      value: dashboardData ? formatCount(dashboardData.subscriptions?.pending) : "—",
-      description: "Clinics awaiting subscription",
-      icon: <FiClock />,
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
     },
     {
       title: "Expiring Soon",
