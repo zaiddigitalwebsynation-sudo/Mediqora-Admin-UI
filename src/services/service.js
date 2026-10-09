@@ -1,5 +1,5 @@
 import ApiClient from "../api/ApiClient";
-import Api from "../api/Api";
+import Api from "../api/api";
 
 class ApiService {
 
